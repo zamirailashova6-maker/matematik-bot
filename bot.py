@@ -14,7 +14,7 @@ def run():
     app.run(host='0.0.0.0', port=8080)
 
 # Telegram Tokeningiz
-API_TOKEN =API_TOKEN = '8245715431:AAH1qcJT3ChhKfKOUr1Sh_QwsRNttcVBTHe'
+API_TOKEN = '8245715431:AAH1qcJT3ChhKfKOUr1Sh_QwsRNttcVBTHe'
 bot = telebot.TeleBot(API_TOKEN)
 
 @bot.message_handler(commands=['start'])
