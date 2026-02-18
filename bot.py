@@ -4,51 +4,37 @@ from flask import Flask
 import threading
 import time
 
-# 1. TOKENLAR
+# Tokenlar
 TELEGRAM_TOKEN = '8577700735:AAEXw5cWQSFEayqRwSpoe7Px9gtvAX1mb_c'
 GEMINI_API_KEY = 'AIzaSyCzCd-T1887k828CkNz6b1POIuw02paxEs'
 
-# 2. GEMINI AI SOZLAMASI
-# Model nomini Google kutubxonasiga moslab eng barqaror holatga keltirdik
+# Gemini sozlamasi - 404 xatosini oldini olish uchun eng barqaror nom
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 app = Flask('')
 
-# 3. RENDER UCHUN YASHASH BELGISI
 @app.route('/')
 def home():
-    return "Al-Xorazmiy AI bot ishlamoqda!"
+    return "Bot ishlamoqda!"
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    try:
+        response = model.generate_content(message.text)
+        bot.reply_to(message, response.text)
+    except Exception as e:
+        # Xatolikni ko'rish uchun (masalan, 404 yoki 429)
+        bot.reply_to(message, f"Xatolik: {str(e)}")
 
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
-# 4. XABARLARNI QAYTA ISHLASH
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    try:
-        # AI dan javob olish
-        response = model.generate_content(message.text)
-        # Agar AI bo'sh javob qaytarsa yoki muammo bo'lsa
-        if response and response.text:
-            bot.reply_to(message, response.text)
-        else:
-            bot.reply_to(message, "Kechirasiz, savolingizga javob topolmadim.")
-    except Exception as e:
-        # Xatoni aniq ko'rsatish
-        bot.reply_to(message, f"Xatolik yuz berdi: {str(e)}")
-
-# 5. BOTNI ISHGA TUSHIRISH
 if __name__ == "__main__":
-    # Flask serverni orqa fonda yurgizish
     threading.Thread(target=run_flask, daemon=True).start()
-    
-    print("Bot ulanmoqda...")
-    # Bot o'chib qolsa, avtomatik qayta ulanadi (Conflict xatosini oldini oladi)
     while True:
         try:
             bot.polling(none_stop=True, interval=1, timeout=20)
         except Exception as e:
-            print(f"Ulanishda xato: {e}")
             time.sleep(5)
