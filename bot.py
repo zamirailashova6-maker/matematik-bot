@@ -17,28 +17,36 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Al-Xorazmiy AI Bot yangi tokenda faol!"
+    return "Al-Xorazmiy AI Bot faol holatda!"
 
 # 3. XABARLARNI QABUL QILISH
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     try:
+        # Gemini AI dan javob olish
         response = model.generate_content(message.text)
-        bot.reply_to(message, response.text)
+        if response and response.text:
+            bot.reply_to(message, response.text)
+        else:
+            bot.reply_to(message, "Kechirasiz, ma'lumot topolmadim.")
     except Exception as e:
+        # Xatolikni Telegramda ko'rish uchun
         bot.reply_to(message, f"Xatolik: {str(e)}")
 
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
+# 4. BOTNI ISHGA TUSHIRISH (Eng muhim qismi)
 if __name__ == "__main__":
+    # Flaskni orqa fonda ishga tushirish
     threading.Thread(target=run_flask, daemon=True).start()
     
-    print("Bot yangi tokenda ishga tushmoqda...")
-    while True:
-        try:
-            bot.polling(none_stop=True, interval=1, timeout=20)
-        except Exception as e:
-            # Token yangilangani uchun endi 409 xatosi chiqmasligi kerak
-            print(f"Polling xatosi: {e}")
-            time.sleep(5)
+    # Eskidan qolib ketgan webhookni o'chirish
+    bot.remove_webhook()
+    time.sleep(1) 
+    
+    print("Bot ishga tushdi...")
+    
+    # skip_pending=True: Bot o'chiqligida yozilgan eski xabarlarni e'tiborsiz qoldiradi
+    # Bu botning "tiqilib" qolishini oldini oladi
+    bot.polling(none_stop=True, skip_pending=True)
