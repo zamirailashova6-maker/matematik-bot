@@ -1,38 +1,29 @@
 import telebot
-from sympy import sympify
-import os
-from flask import Flask
-from threading import Thread
+import google.generativeai as genai
 
-# Render bepul tarifda port talab qilgani uchun kichik server
-app = Flask('')
-@app.route('/')
-def home():
-    return "Bot is running!"
+# Telegram Tokeningiz (O'zgartirmang)
+TELEGRAM_TOKEN = '8577700735:AAEXw5cWQSFEayqRwSpoe7Px9gtvAX1mb_c'
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
+# Boya nusxa olgan kalitingizni mana bu yerga, qo'shtirnoq ichiga qo'ying
+GEMINI_API_KEY = 'AIzaSyA7wzPPFibD3y_dNhEw7-SIJG_In1lSVik'
 
-# Telegram Tokeningiz
-API_TOKEN = '8577700735:AAEXw5cWQSFEayqRwSpoe7Px9gtvAX1mb_c'
-bot = telebot.TeleBot(API_TOKEN)
+# AI ni sozlash
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "Salom! Men bepul matematik botman. Misollarni yuboring (masalan: 100*10%).")
+def start(message):
+    bot.reply_to(message, "Salom! Men Al-Xorazmiy AI botiman. Savollaringizga javob beraman!")
 
 @bot.message_handler(func=lambda message: True)
-def calculate(message):
+def handle_message(message):
     try:
-        # Foiz belgisini hisoblash uchun moslashtiramiz
-        text = message.text.replace('%', '/100')
-        res = sympify(text)
-        bot.reply_to(message, f"Natija: {float(res)}")
-    except:
-        bot.reply_to(message, "Xato! Misolni to'g'ri yozing.")
+        # AI dan javob olish
+        response = model.generate_content(message.text)
+        bot.reply_to(message, response.text)
+    except Exception as e:
+        bot.reply_to(message, "Xatolik yuz berdi. Kalitni tekshirib ko'ring.")
 
-if __name__ == "__main__":
-    # Serverni alohida oqimda ishga tushiramiz
-    t = Thread(target=run)
-    t.start()
-    bot.polling(none_stop=True)
+bot.polling()
